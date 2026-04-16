@@ -11,13 +11,25 @@ from .routers import customers, transactions, plans
 from typing import Annotated
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
 app.include_router(transactions.router)
 app.include_router(plans.router)
-templates = Jinja2Templates(directory="templates")
+#app.include_router(invoices.router)
+#esto es un comentario
+templates = Jinja2Templates(directory="src/templates")
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
+@app.get("/")
+def test(request:Request):
+    return templates.TemplateResponse(
+        name="index.html",
+        request=request,
+        context={"request": request}
+    )
+    #return templates.TemplateResponse("index.html", {"request": request})
 
 @app.middleware("http")
 async def log_request_time(request: Request, call_next):
@@ -36,11 +48,7 @@ async def root(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
         return {"message": f"hola, {credentials.username}!"}
     else:
         raise HTTPException(status_code==status.HTTP_401_UNAUTHORIZED)
-    
-    return templates.TemplateResponse(
-        "index.html",
-        {"request":request, "name": "{credentials.username}"}
-    )
+
 
 country_timezones = {
     "CO": "America/Bogota",
