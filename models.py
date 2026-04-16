@@ -1,5 +1,4 @@
 from enum import Enum
- 
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlmodel import Field, SQLModel, Relationship, Session
 from sqlmodel import select
@@ -40,13 +39,12 @@ class CustomerBase(SQLModel):
             raise ValueError("Este correo ya esta registrado")
         return value
         
-    
-    
 class CustomerCreate(CustomerBase):
     pass
 
 class CustomerUpdate(CustomerBase):
     pass
+
 
 class Customer(CustomerBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -64,6 +62,7 @@ class Transaction(TransactionBase, table=True):
     customer_id: int = Field(foreign_key="customer.id")
     customer: Customer = Relationship(back_populates="transactions")
 
+
 class TransactionCreate(TransactionBase):
     customer_id: int = Field(foreign_key="customer.id")
     
@@ -77,4 +76,3 @@ class Invoice(BaseModel):
     @property
     def ammount_total(self):
         return sum(transaction.ammount for transaction in self.transactions)
-    

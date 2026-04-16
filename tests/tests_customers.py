@@ -1,4 +1,4 @@
-from fastapi import status
+from fastapi import FastAPI, Response, status
 
 def test_create_customer(client):
     response = client.post(

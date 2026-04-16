@@ -2,16 +2,21 @@ import zoneinfo
 import time
 
 from datetime import datetime
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from models import Customer, Transaction, Invoice
 from db import SessionDep, create_all_tables
 from sqlmodel import select
 from .routers import customers, transactions, plans
+from typing import Annotated
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
 app.include_router(transactions.router)
 app.include_router(plans.router)
+templates = Jinja2Templates(directory="templates")
 
 
 @app.middleware("http")
@@ -22,9 +27,20 @@ async def log_request_time(request: Request, call_next):
     print(f"Request: {request.url} completed in: {process_time:.4f} seconds")
     return response
 
+security = HTTPBasic()
+
 @app.get("/")
-async def root():
-    return {"message": "hola, Leonardo Fonseca!"}
+async def root(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
+    print(credentials)
+    if credentials.username == "leonardo" and credentials.password == "123456789":
+        return {"message": f"hola, {credentials.username}!"}
+    else:
+        raise HTTPException(status_code==status.HTTP_401_UNAUTHORIZED)
+    
+    return templates.TemplateResponse(
+        "index.html",
+        {"request":request, "name": "{credentials.username}"}
+    )
 
 country_timezones = {
     "CO": "America/Bogota",
@@ -44,7 +60,3 @@ async def get_time_by_iso_code(iso_code:str):
     return {"time": datetime.now(tz) }
 
 db_customers: list[Customer] = []
-
-@app.post("/invoices")
-async def create_invoice(invoice_data:Invoice):
-    return invoice_data
