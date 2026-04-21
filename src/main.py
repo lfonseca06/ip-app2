@@ -2,7 +2,7 @@ import zoneinfo
 import time
 
 from datetime import datetime
-from fastapi import FastAPI, Request, Depends, status
+from fastapi import FastAPI, HTTPException, Request, Depends, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from models import Customer, Transaction, Invoice
 from db import SessionDep, create_all_tables
@@ -12,15 +12,16 @@ from typing import Annotated
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi import Request
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
 app.include_router(transactions.router)
 app.include_router(plans.router)
 #app.include_router(invoices.router)
-#esto es un comentario
+#Base.metadata.create_all(bind=engine)
 templates = Jinja2Templates(directory="src/templates")
-app.mount("/static", StaticFiles(directory="src/static"), name="static")
+app.mount("/templates", StaticFiles(directory="src/templates"), name="static")
 
 @app.get("/")
 def test(request:Request):
