@@ -12,7 +12,8 @@ from typing import Annotated
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi import Request
+from pathlib import Path
+
 
 app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
@@ -20,17 +21,37 @@ app.include_router(transactions.router)
 app.include_router(plans.router)
 #app.include_router(invoices.router)
 #Base.metadata.create_all(bind=engine)
-templates = Jinja2Templates(directory="src/templates")
-app.mount("/templates", StaticFiles(directory="src/templates"), name="static")
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.get("/")
+security = HTTPBasic()
+
+"""@app.get("/")
 def test(request:Request):
     return templates.TemplateResponse(
         name="index.html",
         request=request,
         context={"request": request}
-    )
+    )"""
+
+@app.get("/")
+def mostrar_login(request: Request):
     #return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        request,
+        "index.html",
+        {"request": request}
+    )
+
+
+@app.get("/login")
+async def root(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
+    print(credentials)
+    if credentials.username == "leonardo" and credentials.password == "123456789":
+        return {"message": f"hola, {credentials.username}!"}
+    else:
+        raise HTTPException(status_code==status.HTTP_401_UNAUTHORIZED)
+
 
 @app.middleware("http")
 async def log_request_time(request: Request, call_next):
@@ -40,16 +61,6 @@ async def log_request_time(request: Request, call_next):
     print(f"Request: {request.url} completed in: {process_time:.4f} seconds")
     return response
 
-security = HTTPBasic()
-
-@app.get("/")
-async def root(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
-    print(credentials)
-    if credentials.username == "leonardo" and credentials.password == "123456789":
-        return {"message": f"hola, {credentials.username}!"}
-    else:
-        raise HTTPException(status_code==status.HTTP_401_UNAUTHORIZED)
-
 
 country_timezones = {
     "CO": "America/Bogota",
@@ -58,6 +69,7 @@ country_timezones = {
     "BR": "America/Sao_Paulo",
     "PE": "America/Lima"
 }
+
 
 @app.get("/time/{iso_code}")
 async def get_time_by_iso_code(iso_code:str):
