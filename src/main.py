@@ -7,7 +7,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from models import Customer, Transaction, Invoice
 from db import SessionDep, create_all_tables
 from sqlmodel import select
-from .routers import customers, transactions, plans
+from .routers import customers, transactions, plans, login
 from typing import Annotated
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -19,39 +19,11 @@ app = FastAPI(lifespan=create_all_tables)
 app.include_router(customers.router)
 app.include_router(transactions.router)
 app.include_router(plans.router)
+app.include_router(login.router)
 #app.include_router(invoices.router)
 #Base.metadata.create_all(bind=engine)
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-security = HTTPBasic()
-
-"""@app.get("/")
-def test(request:Request):
-    return templates.TemplateResponse(
-        name="index.html",
-        request=request,
-        context={"request": request}
-    )"""
-
-@app.get("/")
-def mostrar_login(request: Request):
-    #return templates.TemplateResponse("index.html", {"request": request})
-    return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"request": request}
-    )
-
-
-@app.get("/login")
-async def root(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
-    print(credentials)
-    if credentials.username == "leonardo" and credentials.password == "123456789":
-        return {"message": f"hola, {credentials.username}!"}
-    else:
-        raise HTTPException(status_code==status.HTTP_401_UNAUTHORIZED)
-
 
 @app.middleware("http")
 async def log_request_time(request: Request, call_next):
@@ -60,7 +32,6 @@ async def log_request_time(request: Request, call_next):
     process_time = time.time() - start_time
     print(f"Request: {request.url} completed in: {process_time:.4f} seconds")
     return response
-
 
 country_timezones = {
     "CO": "America/Bogota",
